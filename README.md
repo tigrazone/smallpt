@@ -12,9 +12,9 @@ UPDATE
 by tigrazone
 22 apr 2018
 
-added random spheres. for further scene acceleration.
-added makefile
-added some windows stuff
+added random spheres. for further scene acceleration.<br>
+added makefile<br>
+added some windows stuff<br>
 <img src="image.png">
 
 
