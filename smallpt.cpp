@@ -1,3 +1,11 @@
+#define _USE_MATH_DEFINES
+#define erand48(dummy) (double(rand()) / RAND_MAX)
+
+#define SPHERES 150
+
+#include <vector>
+using std::vector;
+
 #include <math.h>   // smallpt, a Path Tracer by Kevin Beason, 2008
 #include <stdlib.h> // Make : g++ -O3 -fopenmp smallpt.cpp -o smallpt
 #include <stdio.h>  //        Remove "-fopenmp" for g++ version < 4.2
@@ -18,6 +26,7 @@ struct Sphere {
   double rad;       // radius
   Vec p, e, c;      // position, emission, color
   Refl_t refl;      // reflection type (DIFFuse, SPECular, REFRactive)
+  Sphere() {}
   Sphere(double rad_, Vec p_, Vec e_, Vec c_, Refl_t refl_):
     rad(rad_), p(p_), e(e_), c(c_), refl(refl_) {}
   double intersect(const Ray &r) const { // returns distance, 0 if nohit
@@ -27,21 +36,12 @@ struct Sphere {
     return (t=b-det)>eps ? t : ((t=b+det)>eps ? t : 0);
   }
 };
-Sphere spheres[] = {//Scene: radius, position, emission, color, material
-  Sphere(1e5, Vec( 1e5+1,40.8,81.6), Vec(),Vec(.75,.25,.25),DIFF),//Left
-  Sphere(1e5, Vec(-1e5+99,40.8,81.6),Vec(),Vec(.25,.25,.75),DIFF),//Rght
-  Sphere(1e5, Vec(50,40.8, 1e5),     Vec(),Vec(.75,.75,.75),DIFF),//Back
-  Sphere(1e5, Vec(50,40.8,-1e5+170), Vec(),Vec(),           DIFF),//Frnt
-  Sphere(1e5, Vec(50, 1e5, 81.6),    Vec(),Vec(.75,.75,.75),DIFF),//Botm
-  Sphere(1e5, Vec(50,-1e5+81.6,81.6),Vec(),Vec(.75,.75,.75),DIFF),//Top
-  Sphere(16.5,Vec(27,16.5,47),       Vec(),Vec(1,1,1)*.999, SPEC),//Mirr
-  Sphere(16.5,Vec(73,16.5,78),       Vec(),Vec(1,1,1)*.999, REFR),//Glas
-  Sphere(600, Vec(50,681.6-.27,81.6),Vec(12,12,12),  Vec(), DIFF) //Lite
-};
+vector<Sphere> spheres(SPHERES);
+
 inline double clamp(double x){ return x<0 ? 0 : x>1 ? 1 : x; }
 inline int toInt(double x){ return int(pow(clamp(x),1/2.2)*255+.5); }
 inline bool intersect(const Ray &r, double &t, int &id){
-  double n=sizeof(spheres)/sizeof(Sphere), d, inf=t=1e20;
+  double n=SPHERES, d, inf=t=1e20;
   for(int i=int(n);i--;) if((d=spheres[i].intersect(r))&&d<t){t=d;id=i;}
   return t<inf;
 }
@@ -49,7 +49,7 @@ Vec radiance(const Ray &r, int depth, unsigned short *Xi){
   double t;                               // distance to intersection
   int id=0;                               // id of intersected object
   if (!intersect(r, t, id)) return Vec(); // if miss, return black
-  const Sphere &obj = spheres[id];        // the hit object
+  const Sphere obj = spheres[id];        // the hit object
   Vec x=r.o+r.d*t, n=(x-obj.p).norm(), nl=n.dot(r.d)<0?n:n*-1, f=obj.c;
   double p = f.x>f.y && f.x>f.z ? f.x : f.y>f.z ? f.y : f.z; // max refl
   if (++depth>5) if (erand48(Xi)<p) f=f*(1/p); else return obj.e; //R.R.
@@ -76,6 +76,30 @@ int main(int argc, char *argv[]){
   int w=1024, h=768, samps = argc==2 ? atoi(argv[1])/4 : 1; // # samples
   Ray cam(Vec(50,52,295.6), Vec(0,-0.042612,-1).norm()); // cam pos, dir
   Vec cx=Vec(w*.5135/h), cy=(cx%cam.d).norm()*.5135, r, *c=new Vec[w*h];
+  
+  //build scene
+  
+        spheres[0] = Sphere(1e5, Vec(1e5+1,40.8,81.6),   Vec(),Vec(.75,.25,.25),DIFF); // Left
+        spheres[1] = Sphere(1e5, Vec(-1e5+99,40.8,81.6), Vec(),Vec(.25,.25,.75),DIFF); // Right
+        spheres[2] = Sphere(1e5, Vec(50,40.8, 1e5),      Vec(),Vec(.75,.75,.75),DIFF); // Back
+        spheres[3] = Sphere(1e5, Vec(50,40.8,-1e5+170),  Vec(),Vec(),           DIFF); // Front
+        spheres[4] = Sphere(1e5, Vec(50, 1e5, 81.6),     Vec(),Vec(.75,.75,.75),DIFF); // Bottom
+        spheres[5] = Sphere(1e5, Vec(50,-1e5+81.6,81.6), Vec(),Vec(.75,.75,.75),DIFF) ;// Top
+        spheres[6] = Sphere(600, Vec(50,681.6-.27,81.6), Vec(12,12,12),  Vec(), DIFF); // Light
+        spheres[7] = Sphere(16.5,Vec(73,16.5,78),        Vec(),Vec(1,1,1)*.999, REFR); // Glas
+        spheres[8] = Sphere(16.5,Vec(27,16.5,47),        Vec(),Vec(1,1,1)*.999, SPEC) ;// Mirror
+		
+        for (int s = 9; s < SPHERES; ++s) {
+            // Create weird random spheres
+            float radius = 1.0f + 2.0f * erand48(Xi);
+            Vec pos = Vec(erand48(Xi) * 100.0 , erand48(Xi) * 100.0 , erand48(Xi) * 100.0 + 50.0);
+            Vec c = Vec(erand48(Xi) * 0.8f + 0.1f, erand48(Xi) * 0.8f + 0.1f, erand48(Xi) * 0.8f + 0.1f);
+            float reflParam = erand48(Xi);
+            Refl_t rt = reflParam < 0.2f ? REFR : (reflParam > 0.8f ? SPEC : DIFF);
+        
+            spheres[s] = Sphere(radius, pos, Vec(0.05, 0.05, 0.05),  c, rt);
+        }
+  
   for (int y=0; y<h; y++){                       // Loop over image rows
     fprintf(stderr,"\rRendering (%d spp) %5.2f%%",samps*4,100.*y/(h-1));
     for (unsigned short x=0, Xi[3]={0,0,y*y*y}; x<w; x++)   // Loop cols

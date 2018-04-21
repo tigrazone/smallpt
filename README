@@ -7,6 +7,17 @@ CREDITS
 Author: Kevin Beason (kevin.beason [at] gmail.com)
 Date: 10/11/2008
 
+UPDATE
+
+by tigrazone
+22 apr 2018
+
+added random spheres. for further scene acceleration.
+added makefile
+added some windows stuff
+<img src="image.png">
+
+
 SUMMARY
 
 smallpt is a small Monte Carlo path tracer, and generates a single image of a
