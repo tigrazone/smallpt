@@ -12,11 +12,29 @@ UPDATE
 by tigrazone
 22 apr 2018
 
-added random spheres. for further scene acceleration.
-added makefile
-added some windows stuff
+added random spheres. for further scene acceleration.<br>
+added makefile<br>
+added some windows stuff<br>
 <img src="image.png">
 
+ALGORITHMS
+<style>
+.tabb tr,
+.tabb td,
+.tabb
+{
+	border:0!important;
+	padding:0!important;
+}
+.tabb td
+{
+	padding:4px!important;
+}
+</style>
+<table class=tabb>
+<tr><td>smallpt.cpp</td><td>&nbsp;</td><td>No acceleration, brute force, slow for many objects.</td></tr>
+<tr><td>smallpt-grid.cpp</td><td>&nbsp;</td><td>Grid acceleration, easy and fast. UNDER CONSTRUCTION</td></tr>
+</table>
 
 SUMMARY
 
