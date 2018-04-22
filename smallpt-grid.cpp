@@ -12,6 +12,8 @@ typedef struct {
 	unsigned int objID;
 } gridARRel;
 
+#define Aclamp(a, b, c) ( (a)>(b) ? ( (a)>(c) ? (c): (a) ) : ( (b)>(c) ? (c): (b) ) )
+
 #include <math.h>   // smallpt, a Path Tracer by Kevin Beason, 2008
 #include <stdlib.h> // Make : g++ -O3 -fopenmp smallpt.cpp -o smallpt
 #include <stdio.h>  //        Remove "-fopenmp" for g++ version < 4.2
@@ -50,7 +52,11 @@ vector<gridARRel> gridARR;
 vector<Vec> bbxmin(SPHERES);
 vector<Vec> bbxmax(SPHERES);
 
-inline double clamp(double x){ return x<0 ? 0 : x>1 ? 1 : x; }
+//clamp values to 1.5, not 1.0 like in original version.
+//gives deeper effects in caustics
+float clampTO=1.5f; 
+
+inline double clamp(double x){ return x<0 ? 0 : (x>clampTO ? clampTO : x)/clampTO; }
 inline int toInt(double x){ return int(pow(clamp(x),1/2.2)*255+.5); }
 inline bool intersect(const Ray &r, double &t, int &id){
   double n=SPHERES, d, inf=t=1e20;
@@ -147,58 +153,47 @@ int main(int argc, char *argv[]){
     
     float s = pow( ( ( BBlength.x * BBlength.y * BBlength.z ) / SPHERES ), 1.0f / 3.0f );
     
-    int nx = ( int ) ( BBlength.x / s +0.5f);
-    int ny = ( int ) ( BBlength.y / s +0.5f);
-    int nz = ( int ) ( BBlength.z / s +0.5f);
+    int nx = Aclamp((int) ((BBlength.x / s) + 0.5), 1, 128);
+    int ny = Aclamp((int) ((BBlength.y / s) + 0.5), 1, 128);
+    int nz = Aclamp((int) ((BBlength.z / s) + 0.5), 1, 128);
 	
 	printf("SPHERES=%d\n", SPHERES);
 	printf("GRID nx=%d ny=%d nz=%d\n", nx, ny, nz);
 	
-	/*
+	float voxelwx, voxelwy, voxelwz;
+	float invVoxelwx, invVoxelwy, invVoxelwz;
 	
-	
-    
-    gridPARAMnx = Aclamp( ( int ) ( BBlength.x / gridPARAMs +0.5f), 1, 128);
-    gridPARAMny = Aclamp( ( int ) ( BBlength.y / gridPARAMs +0.5f), 1, 128);
-    gridPARAMnz = Aclamp( ( int ) ( BBlength.z / gridPARAMs +0.5f), 1, 128);
-	
-	
-        voxelwx = BBlength.x / gridPARAMnx;
-        voxelwy = BBlength.y / gridPARAMny;
-        voxelwz = BBlength.z / gridPARAMnz;
+	float invNx, invNy, invNz;
+		
+        voxelwx = BBlength.x / nx;
+        voxelwy = BBlength.y / ny;
+        voxelwz = BBlength.z / nz;
         invVoxelwx = 1.0f / voxelwx;
         invVoxelwy = 1.0f / voxelwy;
-        invVoxelwz = 1.0f / voxelwz;		
+        invVoxelwz = 1.0f / voxelwz;
+			
+		invNx = 1.0f / nx;
+        invNy = 1.0f / ny;
+        invNz = 1.0f / nz;
+	
+	Vec abound_min;
+	Vec abound_max;
+	int i;
 		
-		invNx = 1.0f / gridPARAMnx;
-        invNy = 1.0f / gridPARAMny;
-        invNz = 1.0f / gridPARAMnz;
-	
-	
-	gridARRel gridARRelem;
-	
-	
-	//создать массив grid
-	gridARRsz = (sphereCount+2)*6; //приблизительно
-	gridARR = (gridARRel*)malloc( gridARRsz * sizeof(gridARRel) );
-	gridARRused = 0;
-		
-	for(i = 0; i < sphereCount; i++) 
+	for(i = 0; i < SPHERES; i++) 
 	{
-		//printf("minX %d lid=%d w=%.5f\n", i, bbx_order[i], bboxes[ bbx_order[i] ].mn.x);		
-	
-		vassign(abound.mn, bboxes[i].mn);
-		vassign(abound.mx, bboxes[i].mx);
+		abound_min = bbxmin[i];
+		abound_max = bbxmin[i];
 			
-			vsub(abound.mn, abound.mn, bound.mn);
-			vsub(abound.mx, abound.mx, bound.mn);			
+		abound_max = abound_min - Gbbxmin;
+		abound_max = abound_max - Gbbxmin;			
 			
-			int minx = ( int )floor( abound.mn.x * invVoxelwx );
-			int maxx = ( int )ceil( abound.mx.x * invVoxelwx );
-			int miny = ( int )floor( abound.mn.y * invVoxelwy );
-			int maxy = ( int )ceil( abound.mx.y  * invVoxelwy );
-			int minz = ( int )floor( abound.mn.z  * invVoxelwz );
-			int maxz = ( int )ceil( abound.mx.z  * invVoxelwz );
+			int minx = ( int )floor( abound_min.x * invVoxelwx );
+			int maxx = ( int )ceil( abound_max.x * invVoxelwx );
+			int miny = ( int )floor( abound_min.y * invVoxelwy );
+			int maxy = ( int )ceil( abound_max.y  * invVoxelwy );
+			int minz = ( int )floor( abound_min.z  * invVoxelwz );
+			int maxz = ( int )ceil( abound_max.z  * invVoxelwz );
 			
 			gridARRelem.objID = i;
 			
@@ -208,28 +203,15 @@ int main(int argc, char *argv[]){
 				{
 					for ( int x = minx; x < maxx; x++ )
 					{
-						gridARRelem.idx = ( z * gridPARAMny * gridPARAMnx ) + ( y * gridPARAMnx ) + x;
-						gridARRelem.ordr = gridARRused;
+						gridARRelem.idx = ( z * ny * nx ) + ( y * nx ) + x;						
 						
-						if(gridARRused==gridARRsz)
-						{
-							//printf("!418\n");
-							gridARRsz += gridARRsz;
-							gridARR = (gridARRel *)realloc(gridARR, sizeof(gridARRel) * gridARRsz);							
-						}
-						
-						
-						gridARR[gridARRused] = gridARRelem;
-						gridARRused++;
+						gridARR.push_back(gridARRelem);
 					}
 				}
 			}
 	}
 	
-	*/
-	
-	
-	
+	printf("gridARR total elements: %d\n", gridARR.size());	
 	
 	
   
