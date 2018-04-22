@@ -17,23 +17,10 @@ added makefile<br>
 added some windows stuff<br>
 <img src="image.png">
 
-ALGORITHMS
-<style>
-.tabb tr,
-.tabb td,
-.tabb
-{
-	border:0!important;
-	padding:0!important;
-}
-.tabb td
-{
-	padding:4px!important;
-}
-</style>
-<table class=tabb>
-<tr><td>smallpt.cpp</td><td>&nbsp;</td><td>No acceleration, brute force, slow for many objects.</td></tr>
-<tr><td>smallpt-grid.cpp</td><td>&nbsp;</td><td>Grid acceleration, easy and fast. UNDER CONSTRUCTION</td></tr>
+ALGORITHMS and files
+<table style="border:0!important;padding:0!important;">
+<tr style="border:0!important;padding:0!important;"><td style="border:0!important;padding:4px!important;">smallpt.cpp</td><td style="border:0!important;padding:4px!important;">&nbsp;</td><td style="border:0!important;padding:4px!important;">No acceleration, brute force, slow for many objects.</td></tr>
+<tr style="border:0!important;padding:0!important;"><td style="border:0!important;padding:4px!important;">smallpt-grid.cpp</td><td style="border:0!important;padding:4px!important;">&nbsp;</td><td style="border:0!important;padding:4px!important;">Grid acceleration, easy and fast. UNDER CONSTRUCTION</td></tr>
 </table>
 
 SUMMARY
