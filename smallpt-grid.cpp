@@ -185,7 +185,7 @@ int main(int argc, char *argv[]){
 		abound_min = bbxmin[i];
 		abound_max = bbxmin[i];
 			
-		abound_max = abound_min - Gbbxmin;
+		abound_min = abound_min - Gbbxmin;
 		abound_max = abound_max - Gbbxmin;			
 			
 			int minx = ( int )floor( abound_min.x * invVoxelwx );
